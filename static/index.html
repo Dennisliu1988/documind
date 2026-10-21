@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f8f9f6">
+    <meta name="documind-api-base" content="">
     <title>DocuMind — 你的 AI 知识助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -254,6 +255,19 @@
     </div>
 
     <script>
+        const configuredApiBase = document.querySelector('meta[name="documind-api-base"]').content.trim();
+        const localHostnames = ["localhost", "127.0.0.1", "::1"];
+        const isLocalPage = window.location.protocol === "file:" || localHostnames.includes(window.location.hostname);
+        const API_BASE_URL = (configuredApiBase || (
+            isLocalPage
+                ? "http://127.0.0.1:8000"
+                : window.location.origin
+        )).replace(/\/+$/, "");
+
+        function apiUrl(path) {
+            return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+        }
+
         const conversation = document.getElementById("conversation");
         const questionInput = document.getElementById("question");
         const sendButton = document.getElementById("sendButton");
@@ -325,7 +339,7 @@
             status.textContent = "正在解析并建立索引…";
             status.className = "mt-3 text-xs text-[#71836a]";
             try {
-                const response = await fetch("/documind/api/doc/ingest", {
+                const response = await fetch(apiUrl("/api/doc/ingest"), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ file_path: path })
@@ -371,7 +385,7 @@
             scheduleConversationScroll();
 
             try {
-                const response = await fetch("/documind/api/chat", {
+                const response = await fetch(apiUrl("/api/chat"), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question, history: [] })
