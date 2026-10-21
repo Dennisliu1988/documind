@@ -17,6 +17,11 @@ dependencies = [
     "transformers>=4.30.0",
     "uvicorn>=0.54.0",
 ]
+
+[tool.uv]
+# 允许跨多个源寻找最优版本（打破安全隔离限制）
+index-strategy = "unsafe-best-match"
+
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
