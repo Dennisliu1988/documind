@@ -258,14 +258,37 @@
         const configuredApiBase = document.querySelector('meta[name="documind-api-base"]').content.trim();
         const localHostnames = ["localhost", "127.0.0.1", "::1"];
         const isLocalPage = window.location.protocol === "file:" || localHostnames.includes(window.location.hostname);
-        const API_BASE_URL = (configuredApiBase || (
-            isLocalPage
-                ? "http://127.0.0.1:8000"
-                : window.location.origin
-        )).replace(/\/+$/, "");
+        const pageBasePath = window.location.protocol === "file:"
+            ? "/"
+            : new URL(".", window.location.href).pathname;
+        const API_BASE_URL = (
+            configuredApiBase
+                ? new URL(configuredApiBase, window.location.origin).href
+                : isLocalPage
+                    ? "http://127.0.0.1:8000"
+                    : `${window.location.origin}${pageBasePath}`
+        ).replace(/\/+$/, "");
 
         function apiUrl(path) {
             return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+        }
+
+        async function readApiJson(response) {
+            const body = await response.text();
+            let data;
+            try {
+                data = JSON.parse(body);
+            } catch {
+                const snippet = body.trim().slice(0, 120);
+                if (/^\s*</.test(body)) {
+                    throw new Error(`请求地址 ${response.url} 返回了网页而不是 API（HTTP ${response.status}）。请确认服务器已将该路径转发到 DocuMind 后端。`);
+                }
+                throw new Error(snippet || `服务器返回了无法识别的响应（HTTP ${response.status}）`);
+            }
+            if (!response.ok) {
+                throw new Error(data.detail || data.message || `请求失败（HTTP ${response.status}）`);
+            }
+            return data;
         }
 
         const conversation = document.getElementById("conversation");
@@ -344,10 +367,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ file_path: path })
                 });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.detail || "导入失败，请检查文件路径后重试。");
-                }
+                const data = await readApiJson(response);
                 status.textContent = `已成功导入，建立了 ${data.chunks_count} 个知识片段。`;
                 status.className = "mt-3 text-xs text-[#55734e]";
                 document.getElementById("sidebarEmpty").classList.add("hidden");
@@ -390,9 +410,15 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question, history: [] })
                 });
-                if (!response.ok || !response.body) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(data.detail || "暂时无法获取回答，请稍后重试。");
+                if (!response.ok) {
+                    await readApiJson(response);
+                }
+                if (!response.body) {
+                    throw new Error("服务器没有返回可读取的回答流。");
+                }
+                if (!(response.headers.get("content-type") || "").includes("text/event-stream")) {
+                    await readApiJson(response);
+                    throw new Error("服务器返回的不是流式回答，请检查后端 API 路由配置。");
                 }
 
                 const reader = response.body.getReader();
