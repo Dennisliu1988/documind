@@ -1,0 +1,21 @@
+[project]
+name = "documind"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.9",
+    "fastapi>=0.156.4",
+    "openai>=3.35.1",
+    "pydantic>=2.14.1",
+    "pypdf>=6.21.1",
+    "python-dotenv>=1.2.4",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=6.1.0",
+    "uvicorn>=0.54.0",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
