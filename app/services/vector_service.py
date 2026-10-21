@@ -2,12 +2,14 @@
 # app/services/vector_service.py
 import chromadb
 import httpx
+import numpy as np
 from chromadb.utils.embedding_functions import (
     EmbeddingFunction,
     register_embedding_function,
 )
+from optimum.onnxruntime import ORTModelForSequenceClassification
 from rank_bm25 import BM25Okapi
-from sentence_transformers import CrossEncoder
+from transformers import AutoTokenizer
 
 from app.core.config import settings
 
@@ -38,11 +40,18 @@ class VectorService:
         self._reranker = None
         self._bm25 = None
         self._bm25_docs = []
+        self._reranker = None
+        self._tokenizer = None
 
     @property
     def reranker(self):
         if self._reranker is None:
-            self._reranker = CrossEncoder(settings.RERANK_MODEL)
+            model_id = settings.RERANK_MODEL
+            # 使用 ONNX 引擎加载模型，速度飞快，不依赖 PyTorch
+            self._reranker = ORTModelForSequenceClassification.from_pretrained(
+                model_id, export=True
+            )
+            self._tokenizer = AutoTokenizer.from_pretrained(model_id)
         return self._reranker
 
     def add_documents(self, chunks: list[dict]):
@@ -98,13 +107,30 @@ class VectorService:
         return [{"document": doc, "metadata": text_to_meta.get(doc, {})} for doc, _ in sorted_docs]
 
     def rerank(self, query: str, candidates: list[dict], top_n: int = 3) -> list[dict]:
-        """Cross-encoder 精排"""
+        """Cross-encoder 精排 (ONNX 版本)"""
         if not candidates:
             return []
+            
+        model = self.reranker
+        
+        # 1. 构造 (问题, 文档) 对
         pairs = [[query, c["document"]] for c in candidates]
-        scores = self.reranker.predict(pairs)
+        
+        # 2. 分词并预测
+        inputs = self._tokenizer(pairs, padding=True, truncation=True, return_tensors="pt")
+        # 新版 optimum 会将 pt 转为 numpy
+        outputs = model(**inputs)
+        
+        # 取出得分
+        logits = outputs.logits.detach().numpy()
+        # Sigmoid 归一化 (如果有多个分类，取正类)
+        scores = 1 / (1 + np.exp(-logits[:, 0]))
+        
+        # 3. 把得分加进结果字典里
         for i, score in enumerate(scores):
             candidates[i]["rerank_score"] = float(score)
+            
+        # 4. 按新得分重新排序，取 Top-K
         sorted_candidates = sorted(candidates, key=lambda x: x["rerank_score"], reverse=True)
         return sorted_candidates[:top_n]
 
