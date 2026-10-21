@@ -177,7 +177,7 @@ The reranker is loaded lazily when the first non-empty candidate set needs reran
 1. Start the server and open the browser UI.
 2. In **Import local document**, enter a PDF path that is readable by the server process, then select **Import document**.
    - Paths are resolved on the server, not in the browser.
-   - The sample path shown by the UI is `./test/刘东旭_前端开发.pdf`; in this repository the included sample is under `tests/`, so enter `./tests/刘东旭_前端开发.pdf` when running from the project root.
+   - The sample path shown by the UI is `./tests/刘东旭_前端开发.pdf`; in this repository the included sample is under `tests/`, so enter `./tests/刘东旭_前端开发.pdf` when running from the project root.
 3. Wait for the ingestion confirmation, then enter a question and select **Send**.
 4. The response is displayed incrementally as the LLM streams tokens.
 
@@ -453,7 +453,7 @@ Reranker 会在首次需要对非空候选集重排序时延迟加载。模型�
 1. 启动服务并打开网页。
 2. 在 **Import local document**（导入本地文档）中输入服务器进程可读取的 PDF 路径，然后点击 **Import document**（导入文档）。
    - 路径由服务器解析，不是浏览器本地路径。
-   - 页面预填路径是 `./test/刘东旭_前端开发.pdf`；仓库里的示例 PDF 实际位于 `tests/` 目录，因此在项目根目录启动时请输入 `./tests/刘东旭_前端开发.pdf`。
+   - 页面预填路径是 `./tests/刘东旭_前端开发.pdf`；仓库里的示例 PDF 实际位于 `tests/` 目录，因此在项目根目录启动时请输入 `./tests/刘东旭_前端开发.pdf`。
 3. 等待入库成功提示，然后输入问题并点击 **Send**（发送）。
 4. 模型生成的回答会逐步显示在页面中。
 
