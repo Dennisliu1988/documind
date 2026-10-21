@@ -8,6 +8,6 @@ class ChatRequest(BaseModel):
     history: list[dict] = Field(default=[], description="历史对话（用于多轮）")
 
 class DocumentUploadRequest(BaseModel):
-    # 为了简化，我们先用 JSON 传文本内容。后面再做真实的文件上传。
+    # 为了简化，先用 JSON 传文本内容。后面再做真实的文件上传。
     file_name: str
     content: str
