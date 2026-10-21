@@ -325,7 +325,7 @@
             status.textContent = "正在解析并建立索引…";
             status.className = "mt-3 text-xs text-[#71836a]";
             try {
-                const response = await fetch("/api/doc/ingest", {
+                const response = await fetch("/documind/api/doc/ingest", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ file_path: path })
@@ -371,7 +371,7 @@
             scheduleConversationScroll();
 
             try {
-                const response = await fetch("/api/chat", {
+                const response = await fetch("/documind/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question, history: [] })
